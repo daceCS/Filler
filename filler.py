@@ -13,6 +13,11 @@ purple_count = 0
 green_count = 0
 blue_count = 0
 
+purple_active = True
+green_active = True
+red_active = True
+blue_active = True
+
 players_board = [[0, 0, 0, -1],
                  [0, 0, 0, 0],
                  [0, 0, 0, 0],
