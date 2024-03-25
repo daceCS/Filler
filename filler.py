@@ -118,6 +118,26 @@ def define_captures(player, color, i, j):
         define_captures(player, color, i, j - 1)
 
 
+def reset():
+    global game_turn, red_count, purple_count, green_count, blue_count, board, players_board
+    game_turn = 0
+    red_count = 0
+    purple_count = 0
+    green_count = 0
+    blue_count = 0
+    board = [[Cell() for _ in range(grid_size)] for _ in range(grid_size)]
+    classify_board(board, players_board)
+
+    for i in range(4):
+        for j in range(4):
+            if i == 3 and j == 0:
+                players_board[i][j] = 1
+            elif i == 0 and j == 3:
+                players_board[i][j] = -1
+            else:
+                players_board[i][j] = 0
+
+
 run = True
 while run:
     clock.tick(100)
@@ -129,6 +149,9 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                reset()
         if event.type == pygame.MOUSEBUTTONDOWN:
             for i in range(4):
                 for j in range(4):
