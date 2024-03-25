@@ -79,7 +79,6 @@ clock = pygame.time.Clock()
 
 
 def define_captures(player, color, i, j):
-
     if player == 1:
         for x in range(4):
             for y in range(4):
@@ -90,33 +89,28 @@ def define_captures(player, color, i, j):
             for y in range(4):
                 if players_board[x][y] == -1:
                     board[x][y].color = pygame.Color(color)
-    print(i+1)
-    print(j)
-    print(color)
     if i + 1 < 4 and board[i + 1][j].color == pygame.Color(color) and board[i + 1][j].captured == False:
         board[i + 1][j].value = player
         players_board[i + 1][j] = player
         print(players_board)
         define_captures(player, color, i + 1, j)
-
     if i - 1 >= 0 and board[i - 1][j].color == pygame.Color(color) and board[i - 1][j].captured == False:
         board[i - 1][j].value = player
         board[i - 1][j].captured = True
-        players_board[i-1][j] = player
+        players_board[i - 1][j] = player
         print(players_board)
         define_captures(player, color, i - 1, j)
-    if j + 1 < 4 and board[i][j+1].color == pygame.Color(color) and board[i][j+1].captured == False:
-        board[i][j+1].value = player
-        players_board[i][j+1] = player
+    if j + 1 < 4 and board[i][j + 1].color == pygame.Color(color) and board[i][j + 1].captured == False:
+        board[i][j + 1].value = player
+        players_board[i][j + 1] = player
         print(players_board)
-        define_captures(player, color, i, j+1)
-
-    if j - 1 >= 0 and board[i][j-1].color == pygame.Color(color) and board[i][j-1].captured == False:
-        board[i][j-1].value = player
-        board[i][j-1].captured = True
-        players_board[i][j-1] = player
+        define_captures(player, color, i, j + 1)
+    if j - 1 >= 0 and board[i][j - 1].color == pygame.Color(color) and board[i][j - 1].captured == False:
+        board[i][j - 1].value = player
+        board[i][j - 1].captured = True
+        players_board[i][j - 1] = player
         print(players_board)
-        define_captures(player, color, i, j-1)
+        define_captures(player, color, i, j - 1)
 
 
 run = True
