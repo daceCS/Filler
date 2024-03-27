@@ -8,6 +8,7 @@ blue = pygame.Rect(350, 640, 50, 50)
 
 color_arr = ['purple', 'red', 'green', 'blue']
 game_turn = 0
+game_over = False
 red_count = 0
 purple_count = 0
 green_count = 0
@@ -84,12 +85,7 @@ clock = pygame.time.Clock()
 
 
 def define_captures(player, color, i, j):
-    print('called')
-    print(i)
-    print(j)
-    print(players_board)
-    print(color)
-
+    global game_turn
     if player == 1:
         for x in range(4):
             for y in range(4):
@@ -103,26 +99,27 @@ def define_captures(player, color, i, j):
     if i + 1 < 4 and board[i + 1][j].color == pygame.Color(color) and board[i + 1][j].captured == False:
         board[i + 1][j].value = player
         players_board[i + 1][j] = player
-        print("1" + str(players_board))
+        print(players_board)
         define_captures(player, color, i + 1, j)
     if i - 1 >= 0 and board[i - 1][j].color == pygame.Color(color) and board[i - 1][j].captured == False:
         board[i - 1][j].value = player
         board[i - 1][j].captured = True
         players_board[i - 1][j] = player
-        print("2" + str(players_board))
+        print(players_board)
         define_captures(player, color, i - 1, j)
     if j + 1 < 4 and board[i][j + 1].color == pygame.Color(color) and board[i][j + 1].captured == False:
         board[i][j + 1].value = player
         players_board[i][j + 1] = player
-        print("3" + str(players_board))
+        print(players_board)
         define_captures(player, color, i, j + 1)
     if j - 1 >= 0 and board[i][j - 1].color == pygame.Color(color) and board[i][j - 1].captured == False:
         board[i][j - 1].value = player
         board[i][j - 1].captured = True
         players_board[i][j - 1] = player
-        print("4" + str(players_board))
+        print(players_board)
         define_captures(player, color, i, j - 1)
 
+    # disable()
 
 
 def reset():
@@ -143,43 +140,68 @@ def reset():
                 players_board[i][j] = -1
             else:
                 players_board[i][j] = 0
+    # disable()
+    print(players_board)
 
 
 def disable():
-    global board, red_active, green_active, purple_active, blue_active
-    red_ac = 0
-    blue_ac = 0
-    green_ac = 0
-    purple_ac = 0
-    for i in range(4):
-        for j in range(4):
-            if board[i][j].value == 1 or board[i][j].value == -1:
-                if board[i][j].color == pygame.Color('red'):
+    global green_active, red_active, blue_active, purple_active, players_board, board
+    red_c = 0
+    blue_c = 0
+    green_c = 0
+    purple_c = 0
+
+    for col in range(4):
+        for row in range(4):
+            if players_board[col][row] == 1 or players_board[col][row] == -1:
+                if board[col][row].color == pygame.Color('red'):
                     red_active = False
-                    red_ac += 1
-                if board[i][j].color == pygame.Color('blue'):
-                    blue_active = False
-                    blue_ac += 1
-                if board[i][j].color == pygame.Color('green'):
+                    red_c += 1
+                if board[col][row].color == pygame.Color('green'):
                     green_active = False
-                    green_ac += 1
-                if board[i][j].color == pygame.Color('purple'):
+                    green_c += 1
+                if board[col][row].color == pygame.Color('purple'):
                     purple_active = False
-                    purple_ac += 1
-    if red_ac == 0:
+                    purple_c += 1
+                if board[col][row].color == pygame.Color('blue'):
+                    blue_active = False
+                    blue_c += 1
+
+    print(red_c)
+    print(blue_c)
+    print(green_c)
+    print(purple_c)
+    if red_c == 0:
         red_active = True
-    if blue_ac == 0:
-        blue_active = True
-    if green_ac == 0:
+    if green_c == 0:
         green_active = True
-    if purple_ac == 0:
+    if blue_c == 0:
+        blue_active = True
+    if purple_c == 0:
         purple_active = True
 
 
+def win():
+    global players_board
+    count = 0
+    for i in range(4):
+        for j in range(4):
+            if players_board[i][j] == 1 or players_board[i][j] == -1:
+                count += 1
+    if count == 16:
+        return "Win"
+
+
 disable()
+print('red: ' + str(red_active))
+print('blue: ' + str(blue_active))
+print('green: ' + str(green_active))
+print('purple: ' + str(purple_active))
+legal_move = False
 run = True
 while run:
     clock.tick(100)
+
     if game_turn % 2 == 0:
         pygame.display.set_caption('Player 1 turn')
     else:
@@ -191,12 +213,8 @@ while run:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 reset()
+                reset()
         if event.type == pygame.MOUSEBUTTONDOWN:
-            print('-----------------------------------')
-            print('purple: ' + str(purple_active))
-            print('red: ' + str(red_active))
-            print('blue: ' + str(blue_active))
-            print('green: ' + str(green_active))
             for i in range(4):
                 for j in range(4):
                     piece = board[i][j]
@@ -206,60 +224,66 @@ while run:
                                 piece.color = pygame.Color('red')
                                 piece.value = 1
                                 define_captures(1, 'red', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
                         else:
                             if piece.captured and piece.value == -1:
                                 piece.color = pygame.Color('red')
                                 piece.value = -1
                                 define_captures(-1, 'red', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
                     if blue.collidepoint(event.pos) and blue_active:
                         if game_turn % 2 == 0:
                             if piece.captured and piece.value == 1:
                                 piece.color = pygame.Color('blue')
                                 piece.value = 1
                                 define_captures(1, 'blue', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
                         else:
                             if piece.captured and piece.value == -1:
                                 piece.color = pygame.Color('blue')
                                 piece.value = -1
                                 define_captures(-1, 'blue', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
                     if green.collidepoint(event.pos) and green_active:
                         if game_turn % 2 == 0:
                             if piece.captured and piece.value == 1:
                                 piece.color = pygame.Color('green')
                                 piece.value = 1
                                 define_captures(1, 'green', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
                         else:
                             if piece.captured and piece.value == -1:
                                 piece.color = pygame.Color('green')
                                 piece.value = -1
                                 define_captures(-1, 'green', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
                     if purple.collidepoint(event.pos) and purple_active:
                         if game_turn % 2 == 0:
                             if piece.captured and piece.value == 1:
                                 piece.color = pygame.Color('purple')
                                 piece.value = 1
                                 define_captures(1, 'purple', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
                         else:
                             if piece.captured and piece.value == -1:
                                 piece.color = pygame.Color('purple')
                                 piece.value = -1
                                 define_captures(-1, 'purple', i, j)
-                                disable()
-                                game_turn += 1
+                                legal_move = True
+
+            if legal_move:
+                game_turn += 1
+                disable()
+                print(win())
+                legal_move = False
+
     window.fill(pygame.Color(40, 40, 40))
     for iy, rowOfCells in enumerate(board):
         for ix, cell in enumerate(rowOfCells):
