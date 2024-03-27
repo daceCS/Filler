@@ -142,7 +142,7 @@ def reset():
                 players_board[i][j] = -1
             else:
                 players_board[i][j] = 0
-    # disable()
+    disable()
 
 
 def disable():
@@ -288,9 +288,16 @@ while run:
             if legal_move:
                 game_turn += 1
                 disable()
-                print(win())
                 print(players_board)
                 legal_move = False
+                if win() is not None:
+                  if win() == 1:
+                    pygame.display.set_caption("Player 1 Wins")
+                  if win() == -1:
+                    pygame.display.set_caption("Player 2 Wins")
+                  else:
+                    pygame.display.set_caption("Draw")
+                
 
     window.fill(pygame.Color(40, 40, 40))
     for iy, rowOfCells in enumerate(board):
