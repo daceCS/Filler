@@ -80,6 +80,7 @@ grid_size = 4
 board = [[Cell() for _ in range(grid_size)] for _ in range(grid_size)]
 classify_board(board, players_board)
 pygame.init()
+
 window = pygame.display.set_mode((600, 700))
 clock = pygame.time.Clock()
 
@@ -144,7 +145,6 @@ def reset():
     # disable()
 
 
-
 def disable():
     global green_active, red_active, blue_active, purple_active, players_board, board
     red_c = 0
@@ -167,7 +167,6 @@ def disable():
                 if board[col][row].color == pygame.Color('blue'):
                     blue_active = False
                     blue_c += 1
-
 
     if red_c == 0:
         red_active = True
@@ -222,7 +221,7 @@ while run:
             if event.key == pygame.K_LEFT:
                 reset()
                 reset()
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN and game_over == False:
             for i in range(4):
                 for j in range(4):
                     piece = board[i][j]
@@ -290,6 +289,7 @@ while run:
                 game_turn += 1
                 disable()
                 print(win())
+                print(players_board)
                 legal_move = False
 
     window.fill(pygame.Color(40, 40, 40))
@@ -297,13 +297,29 @@ while run:
         for ix, cell in enumerate(rowOfCells):
             if cell.captured:
                 pygame.draw.rect(window, cell.color, (ix * 150 + 1, iy * 150 + 1, 148, 148))
+
             else:
                 pygame.draw.rect(window, cell.color, (ix * 150 + 1, iy * 150 + 1, 148, 148))
+            if players_board[iy][ix] == 1:
+                pygame.draw.rect(window, pygame.Color("white"), pygame.Rect(ix * 150 + 1, iy * 150 + 1, 148, 148), 4)
+            if players_board[iy][ix] == -1:
+                pygame.draw.rect(window, pygame.Color("grey"), pygame.Rect(ix * 150 + 1, iy * 150 + 1, 148, 148), 4)
 
     pygame.draw.rect(window, [255, 0, 0], red)
     pygame.draw.rect(window, [0, 0, 255], blue)
     pygame.draw.rect(window, [0, 255, 0], green)
     pygame.draw.rect(window, [155, 0, 255], purple)
+
+    if not red_active:
+        pygame.draw.rect(window, pygame.Color('black'), red, 1)
+    if not blue_active:
+        pygame.draw.rect(window, pygame.Color('black'), blue, 1)
+    if not green_active:
+        pygame.draw.rect(window, pygame.Color('black'), green, 1)
+    if not purple_active:
+        pygame.draw.rect(window, pygame.Color('black'), purple, 1)
+
+
 
     pygame.display.flip()
 
