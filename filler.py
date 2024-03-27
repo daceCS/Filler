@@ -99,36 +99,37 @@ def define_captures(player, color, i, j):
     if i + 1 < 4 and board[i + 1][j].color == pygame.Color(color) and board[i + 1][j].captured == False:
         board[i + 1][j].value = player
         players_board[i + 1][j] = player
-        print(players_board)
+
         define_captures(player, color, i + 1, j)
     if i - 1 >= 0 and board[i - 1][j].color == pygame.Color(color) and board[i - 1][j].captured == False:
         board[i - 1][j].value = player
         board[i - 1][j].captured = True
         players_board[i - 1][j] = player
-        print(players_board)
+
         define_captures(player, color, i - 1, j)
     if j + 1 < 4 and board[i][j + 1].color == pygame.Color(color) and board[i][j + 1].captured == False:
         board[i][j + 1].value = player
         players_board[i][j + 1] = player
-        print(players_board)
+
         define_captures(player, color, i, j + 1)
     if j - 1 >= 0 and board[i][j - 1].color == pygame.Color(color) and board[i][j - 1].captured == False:
         board[i][j - 1].value = player
         board[i][j - 1].captured = True
         players_board[i][j - 1] = player
-        print(players_board)
+
         define_captures(player, color, i, j - 1)
 
     # disable()
 
 
 def reset():
-    global game_turn, red_count, purple_count, green_count, blue_count, board, players_board
+    global game_turn, red_count, purple_count, green_count, blue_count, board, players_board, game_over
     game_turn = 0
     red_count = 0
     purple_count = 0
     green_count = 0
     blue_count = 0
+    game_over = False
     board = [[Cell() for _ in range(grid_size)] for _ in range(grid_size)]
     classify_board(board, players_board)
 
@@ -141,7 +142,7 @@ def reset():
             else:
                 players_board[i][j] = 0
     # disable()
-    print(players_board)
+
 
 
 def disable():
@@ -167,10 +168,7 @@ def disable():
                     blue_active = False
                     blue_c += 1
 
-    print(red_c)
-    print(blue_c)
-    print(green_c)
-    print(purple_c)
+
     if red_c == 0:
         red_active = True
     if green_c == 0:
@@ -182,21 +180,31 @@ def disable():
 
 
 def win():
-    global players_board
+    global players_board, game_over
+    player1_count = 0
+    player2_count = 0
     count = 0
     for i in range(4):
         for j in range(4):
-            if players_board[i][j] == 1 or players_board[i][j] == -1:
+            if players_board[i][j] == 1:
                 count += 1
+                player1_count += 1
+            if players_board[i][j] == -1:
+                count += 1
+                player2_count += 1
     if count == 16:
-        return "Win"
+        if player1_count > player2_count:
+            game_over = True
+            return 1
+        elif player1_count < player2_count:
+            game_over = True
+            return -1
+        else:
+            game_over = True
+            return 0
 
 
 disable()
-print('red: ' + str(red_active))
-print('blue: ' + str(blue_active))
-print('green: ' + str(green_active))
-print('purple: ' + str(purple_active))
 legal_move = False
 run = True
 while run:
