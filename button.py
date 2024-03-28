@@ -1,363 +1,437 @@
-#!/usr/bin/env python3
+import pygame
+import random
 from math import inf as infinity
-from random import choice
-import platform
 import time
-from os import system
 
-"""
-An implementation of Minimax AI Algorithm in Tic Tac Toe,
-using Python.
-This software is available under GPL license.
-Author: Clederson Cruz
-Year: 2017
-License: GNU GENERAL PUBLIC LICENSE (GPL)
-"""
+purple = pygame.Rect(350, 640, 50, 50)
+red = pygame.Rect(400, 640, 50, 50)
+green = pygame.Rect(450, 640, 50, 50)
+blue = pygame.Rect(500, 640, 50, 50)
+
+color_arr = ['purple', 'red', 'green', 'blue']
+game_turn = 0
+game_over = False
+red_count = 0
+purple_count = 0
+green_count = 0
+blue_count = 0
+
+purple_active = True
+green_active = True
+red_active = True
+blue_active = True
 
 HUMAN = -1
-COMP = +1
-board = [
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-]
+COMP = 1
+
+state = [[0, 0, 0, -1],
+         [0, 0, 0, 0],
+         [0, 0, 0, 0],
+         [1, 0, 0, 0]]
 
 
-# Called at start of ai turn to move.
-def evaluate(state):
-    """
-    Function to heuristic evaluation of state.
-    :param state: the state of the current board
-    :return: +1 if the computer wins; -1 if the human wins; 0 draw
-    """
-    if wins(state, COMP):
-        score = +1
-    elif wins(state, HUMAN):
-        score = -1
+def set_color():
+    global red_count, blue_count, green_count, purple_count
+    color = color_arr[random.randint(0, 3)]
+
+    if color == 'red' and red_count < 4:
+        red_count += 1
+
+        return pygame.Color(color)
+    elif color == 'red' and red_count == 4:
+        return set_color()
+
+    if color == 'blue' and blue_count < 4:
+        blue_count += 1
+
+        return pygame.Color(color)
+    elif color == 'blue' and blue_count == 4:
+        return set_color()
+
+    if color == 'green' and green_count < 4:
+        green_count += 1
+
+        return pygame.Color(color)
+    elif color == 'green' and green_count == 4:
+        return set_color()
+
+    if color == 'purple' and purple_count < 4:
+        purple_count += 1
+
+        return pygame.Color(color)
+    elif color == 'purple' and purple_count == 4:
+        return set_color()
+
+
+class Cell:
+    def __init__(self):
+        self.captured = False
+        self.value = 0
+        self.color = set_color()
+
+
+def classify_board(board, state):
+    for i in range(4):
+        for j in range(4):
+            if state[i][j] == 1:
+                board[i][j].value = 1
+                board[i][j].captured = True
+            if state[i][j] == -1:
+                board[i][j].value = -1
+                board[i][j].captured = True
+
+
+grid_size = 4
+board = [[Cell() for _ in range(grid_size)] for _ in range(grid_size)]
+classify_board(board, state)
+pygame.init()
+
+window = pygame.display.set_mode((900, 700))
+clock = pygame.time.Clock()
+
+
+def move(player, color, i, j, effectGame, state):
+    global game_turn
+    if effectGame:
+        if player == 1:
+            for x in range(4):
+                for y in range(4):
+                    if state[x][y] == 1:
+                        board[x][y].color = pygame.Color(color)
+        elif player == -1:
+            for x in range(4):
+                for y in range(4):
+                    if state[x][y] == -1:
+                        board[x][y].color = pygame.Color(color)
+        if i + 1 < 4 and board[i + 1][j].color == pygame.Color(color) and not board[i + 1][j].captured:
+            board[i + 1][j].value = player
+            state[i + 1][j] = player
+
+            move(player, color, i + 1, j, True, state)
+        if i - 1 >= 0 and board[i - 1][j].color == pygame.Color(color) and not board[i - 1][j].captured:
+            board[i - 1][j].value = player
+            board[i - 1][j].captured = True
+            state[i - 1][j] = player
+
+            move(player, color, i - 1, j, True, state)
+        if j + 1 < 4 and board[i][j + 1].color == pygame.Color(color) and not board[i][j + 1].captured:
+            board[i][j + 1].value = player
+            state[i][j + 1] = player
+
+            move(player, color, i, j + 1, True, state)
+        if j - 1 >= 0 and board[i][j - 1].color == pygame.Color(color) and not board[i][j - 1].captured:
+            board[i][j - 1].value = player
+            board[i][j - 1].captured = True
+            state[i][j - 1] = player
+
+            move(player, color, i, j - 1, True, state)
     else:
-        score = 0
-    #    print("in evaluate = " + str(score))
-    return score
+        new_state = None
+        return new_state
+    return None
+def reset():
+    global game_turn, red_count, purple_count, green_count, blue_count, board, state, game_over
+    game_turn = 0
+    red_count = 0
+    purple_count = 0
+    green_count = 0
+    blue_count = 0
+    game_over = False
+    board = [[Cell() for _ in range(grid_size)] for _ in range(grid_size)]
+    classify_board(board, state)
+
+    for i in range(4):
+        for j in range(4):
+            if i == 3 and j == 0:
+                state[i][j] = 1
+            elif i == 0 and j == 3:
+                state[i][j] = -1
+            else:
+                state[i][j] = 0
+    disable()
 
 
-def wins(state, player):
-    """
-    This function tests if a specific player wins. Possibilities:
-    * Three rows    [X X X] or [O O O]
-    * Three cols    [X X X] or [O O O]
-    * Two diagonals [X X X] or [O O O]
-    :param state: the state of the current board
-    :param player: a human or a computer
-    :return: True if the player wins
-    """
-    win_state = [
-        [state[0][0], state[0][1], state[0][2], state[0][3]],
-        [state[1][0], state[1][1], state[1][2], state[1][3]],
-        [state[2][0], state[2][1], state[2][2], state[2][3]],
-        [state[3][0], state[3][1], state[3][2], state[3][3]],
-    ]
-    if [player, player, player, player] in win_state:
-        return True
-    else:
-        return False
+def disable():
+    global green_active, red_active, blue_active, purple_active, state, board
+    red_c = 0
+    blue_c = 0
+    green_c = 0
+    purple_c = 0
+
+    for col in range(4):
+        for row in range(4):
+            if state[col][row] == 1 or state[col][row] == -1:
+                if board[col][row].color == pygame.Color('red'):
+                    red_active = False
+                    red_c += 1
+                if board[col][row].color == pygame.Color('green'):
+                    green_active = False
+                    green_c += 1
+                if board[col][row].color == pygame.Color('purple'):
+                    purple_active = False
+                    purple_c += 1
+                if board[col][row].color == pygame.Color('blue'):
+                    blue_active = False
+                    blue_c += 1
+
+    if red_c == 0:
+        red_active = True
+    if green_c == 0:
+        green_active = True
+    if blue_c == 0:
+        blue_active = True
+    if purple_c == 0:
+        purple_active = True
 
 
-def game_over(state):
-    """
-    This function test if the human or computer wins
-    :param state: the state of the current board
-    :return: True if the human or computer wins
-    """
-    return wins(state, HUMAN) or wins(state, COMP)
-
-
-def empty_cells(state):
-    """
-    Each empty cell will be added into cells' list
-    :param state: the state of the current board
-    :return: a list of empty cells
-    """
-    cells = []
-
-    for x, row in enumerate(state):
-        for y, cell in enumerate(row):
-            if cell == 0:
-                cells.append([x, y])
-
-    return cells
-
-
-def valid_move(x, y):
-    """
-    A move is valid if the chosen cell is empty
-    :param x: X coordinate
-    :param y: Y coordinate
-    :return: True if the board[x][y] is empty
-    """
-    if [x, y] in empty_cells(board):
-        return True
-    else:
-        return False
-
-
-def set_move(x, y, player):
-    """
-    Set the move on board, if the coordinates are valid
-    :param x: X coordinate
-    :param y: Y coordinate
-    :param player: the current player
-    """
-    if valid_move(x, y):
-        board[x][y] = player
-        return True
-    else:
-        return False
-
-
-tries = 0
-
-
-# Recursive code that does the Minimax algorithm.
-def minimax(state, depth, player):
-    global tries
-    """
-    AI function that choice the best move
-    :param state: current state of the board
-    :param depth: node index in the tree (0 <= depth <= 9),
-    but never nine in this case (see iaturn() function)
-    :param player: an human or a computer
-    :return: a list with [the best row, best col, best score]
-    """
-    tries += 1
-    if tries % 1000000 == 999999:
-        print(tries)
-
-    if player == COMP:
-        best = [-1, -1, -infinity]
-    else:
-        best = [-1, -1, +infinity]
-
-    # print("depth = " + str(depth))
-    if depth == 0 or game_over(state):
-        score = evaluate(state)
-
-        return [-1, -1, score]
-
-    for cell in empty_cells(state):
-        x, y = cell[0], cell[1]
-        state[x][y] = player
-        score = minimax(state, depth - 1, -player)
-        state[x][y] = 0
-        score[0], score[1] = x, y
-
-        if player == COMP:
-            if score[2] > best[2]:
-                best = score  # max value
-                if best[2] == 1:
-                    return best
-
+def win(state):
+    global game_over
+    player1_count = 0
+    player2_count = 0
+    count = 0
+    for i in range(4):
+        for j in range(4):
+            if state[i][j] == 1:
+                count += 1
+                player1_count += 1
+            if state[i][j] == -1:
+                count += 1
+                player2_count += 1
+    if count == 16:
+        if player1_count > player2_count:
+            game_over = True
+            return 1
+        elif player1_count < player2_count:
+            game_over = True
+            return -1
         else:
-            if score[2] < best[2]:
-                best = score  # min value
-                if best[2] == -1:
-                    return best
-
-    return best
+            game_over = True
+            return 0
 
 
-def render(state, c_choice, h_choice):
-    """
-    Print the board on console
-    :param state: current state of the board
-    """
-
-    chars = {
-        -1: h_choice,
-        +1: c_choice,
-        0: ' '
-    }
-    str_line = '--------------------'
-
-    print('\n' + str_line)
-    for row in state:
-        for cell in row:
-            symbol = chars[cell]
-            print(f'| {symbol} |', end='')
-        print('\n' + str_line)
+def ai_move(color):
+    print(color)
 
 
-# Main code for ai to move.
-def ai_turn(c_choice, h_choice):
-    global tries
-    """
-    It calls the minimax function if the depth < 9,
-    else it choices a random coordinate.
-    :param c_choice: computer's choice X or O
-    :param h_choice: human's choice X or O
-    :return:
-    """
-    depth = len(empty_cells(board))
-    if depth == 0 or game_over(board):
-        return
-
-    render(board, c_choice, h_choice)
-
-    if depth == 16:
-        # If AI gets 1st choice then pick a random location to start game.
-        x = choice([0, 1, 2, 3])
-        y = choice([0, 1, 2, 3])
-    # else:
-    tries = 0
-    move = minimax(board, depth, COMP)
-    print("total tries = " + str(tries))
-
-    x, y = move[0], move[1]
-
-    set_move(x, y, COMP)
-    time.sleep(1)
+def play_postion(color, state, player):
+    new_state = None
+    for i in range(4):
+        for j in range(4):
+            new_state = move(player, color, i, j, False, state)
 
 
-doai_turn = False
+
+def minimax(state, depth, player):
+    global game_over, HUMAN, COMP, purple_active, red_active, green_active, blue_active
+    moves = ['purple', 'red', 'green', 'blue']
+    if depth == 0 or game_over:
+        return evaluate(state)
+
+    if player == True:
+        maxEval = -infinity
+        for move in moves:
+            if move == 'purple' and purple_active:
+                move = play_postion('purple')
+                eval = minimax(move, depth - 1, False)
+                maxEval = max(maxEval, eval)
+            if move == 'red' and red_active:
+                move = play_postion('red')
+                eval = minimax(move, depth - 1, False)
+                maxEval = max(maxEval, eval)
+            if move == 'green' and green_active:
+                move = play_postion('green')
+                eval = minimax(move, depth - 1, False)
+                maxEval = max(maxEval, eval)
+            if move == 'blue' and blue_active:
+                move = play_postion('blue')
+                eval = minimax(move, depth - 1, False)
+                maxEval = max(maxEval, eval)
+        return maxEval
+    else:
+        minEval = +infinity
+        for move in moves:
+            if move == 'red' and red_active:
+                move = play_postion('red')
+                eval = minimax(move, depth - 1, True)
+                minEval = min(minEval, eval)
+            if move == 'purple' and purple_active:
+                move = play_postion('purple')
+                eval = minimax(move, depth - 1, True)
+                minEval = min(minEval, eval)
+            if move == 'blue' and blue_active:
+                move = play_postion('blue')
+                eval = minimax(move, depth - 1, True)
+                minEval = min(minEval, eval)
+            if move == 'green' and green_active:
+                move = play_postion('green')
+                eval = minimax(move, depth - 1, True)
+                minEval = min(minEval, eval)
 
 
-def ai_turn2(c_choice, h_choice):
-    global doai_turn
-    """
-    The Human plays choosing a valid move.
-    :param c_choice: computer's choice X or O
-    :param h_choice: human's choice X or O
-    :return:
-    """
-    if doai_turn:
-        ai_turn(c_choice, h_choice)
-        return
+def evaluate(state):
+    p1_score = 0
+    p2_score = 0
+    total = 0
 
-    depth = len(empty_cells(board))
-    if depth == 0 or game_over(board):
-        return
+    for i in range(4):
+        for j in range(4):
+            if state[i][j] == 1:
+                p1_score += 1
+                total += 1
+            elif state[i][j] == -1:
+                p2_score += 1
+                total += 1
 
-    # Dictionary of valid moves
-    move = -1
-    moves = {
-        1: [0, 0], 2: [0, 1], 3: [0, 2], 4: [0, 3],
-        5: [1, 0], 6: [1, 1], 7: [1, 2], 8: [1, 3],
-        9: [2, 0], 10: [2, 1], 11: [2, 2], 12: [2, 3],
-        13: [3, 0], 14: [3, 1], 15: [3, 2], 16: [3, 3],
-    }
-
-    render(board, c_choice, h_choice)
-
-    while move < 1 or move > 16:
-        try:
-            print("top move = " + str(move))
-            move = int(input('AI use numpad (1..16) or 0 for ai to move:'))
-            print("move = " + str(move))
-            if move == 0:  # Have the ai make the move.
-                doai_turn = True
-                ai_turn(c_choice, h_choice)
-                return
-
-            coord = moves[move]
-            print("coord = " + str(coord))
-            can_move = set_move(coord[0], coord[1], COMP)
-
-            if not can_move:
-                print('Bad move')
-                move = -1
-        except (EOFError, KeyboardInterrupt):
-            print('Bye')
-            exit()
-        except (KeyError, ValueError):
-            print('Bad choice')
-
-
-def human_turn(c_choice, h_choice):
-    """
-    The Human plays choosing a valid move.
-    :param c_choice: computer's choice X or O
-    :param h_choice: human's choice X or O
-    :return:
-    """
-    depth = len(empty_cells(board))
-    if depth == 0 or game_over(board):
-        return
-
-    # Dictionary of valid moves
-    move = -1
-    moves = {
-        1: [0, 0], 2: [0, 1], 3: [0, 2], 4: [0, 3],
-        5: [1, 0], 6: [1, 1], 7: [1, 2], 8: [1, 3],
-        9: [2, 0], 10: [2, 1], 11: [2, 2], 12: [2, 3],
-        13: [3, 0], 14: [3, 1], 15: [3, 2], 16: [3, 3],
-    }
-
-    render(board, c_choice, h_choice)
-
-    while move < 1 or move > 16:
-        try:
-            print("top move = " + str(move))
-            move = int(input('Human use numpad (1..16): '))
-            print("move = " + str(move))
-            coord = moves[move]
-            print("coord = " + str(coord))
-            can_move = set_move(coord[0], coord[1], HUMAN)
-
-            if not can_move:
-                print('Bad move')
-                move = -1
-        except (EOFError, KeyboardInterrupt):
-            print('Bye')
-            exit()
-        except (KeyError, ValueError):
-            print('Bad choice')
+    if total == 16:
+        if p1_score > p2_score:
+            return 1
+        elif p1_score < p2_score:
+            return -1
+        else:
+            return 0
+    else:
+        if p1_score > p2_score:
+            return (p1_score - p2_score) / 10
+        elif p1_score < p2_score:
+            return -(p2_score - p1_score) / 10
+        else:
+            return 0
 
 
 def main():
-    """
-    Main function that calls all functions
-    """
-    h_choice = ''  # X or O
-    c_choice = ''  # X or O
-    first = ''  # if human is the first
+    global game_turn
+    disable()
+    legal_move = False
+    run = True
 
-    # Human may starts first
-    while first != 'Y' and first != 'N':
-        try:
-            first = input('First to start?[y/n]: ').upper()
-        except (EOFError, KeyboardInterrupt):
-            print('Bye')
-            exit()
-        except (KeyError, ValueError):
-            print('Bad choice')
+    while run:
+        clock.tick(100)
 
-    if first == 'Y':
-        h_choice = 'X'
-        c_choice = 'O'
-    else:
-        h_choice = 'O'
-        c_choice = 'X'
+        if game_turn % 2 == 0 and not game_over:
+            pygame.display.set_caption('Player 1 turn')
+        elif game_turn % 2 == 1 and not game_over:
+            pygame.display.set_caption('Player 2 turn')
 
-    # Main loop of this game
-    if first == 'N':
-        ai_turn2(c_choice, h_choice)
-    while len(empty_cells(board)) > 0 and not game_over(board):
-        human_turn(c_choice, h_choice)
-        ai_turn2(c_choice, h_choice)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    reset()
+                    reset()
+            if event.type == pygame.MOUSEBUTTONDOWN and game_over == False:
+                for i in range(4):
+                    for j in range(4):
+                        piece = board[i][j]
+                        if red.collidepoint(event.pos) and red_active:
+                            if game_turn % 2 == 0:
+                                if piece.captured and piece.value == 1:
+                                    piece.color = pygame.Color('red')
+                                    piece.value = 1
+                                    move(1, 'red', i, j, True, state)
+                                    legal_move = True
 
-    # Game over message
-    if wins(board, HUMAN):
-        render(board, c_choice, h_choice)
-        print('YOU WIN!')
-    elif wins(board, COMP):
-        render(board, c_choice, h_choice)
-        print('YOU LOSE!')
-    else:
-        render(board, c_choice, h_choice)
-        print('DRAW!')
+                            else:
+                                if piece.captured and piece.value == -1:
+                                    piece.color = pygame.Color('red')
+                                    piece.value = -1
+                                    move(-1, 'red', i, j, True, state)
+                                    legal_move = True
 
-    exit()
+                        if blue.collidepoint(event.pos) and blue_active:
+                            if game_turn % 2 == 0:
+                                if piece.captured and piece.value == 1:
+                                    piece.color = pygame.Color('blue')
+                                    piece.value = 1
+                                    move(1, 'blue', i, j, True, state)
+                                    legal_move = True
+
+                            else:
+                                if piece.captured and piece.value == -1:
+                                    piece.color = pygame.Color('blue')
+                                    piece.value = -1
+                                    move(-1, 'blue', i, j, True, state)
+                                    legal_move = True
+
+                        if green.collidepoint(event.pos) and green_active:
+                            if game_turn % 2 == 0:
+                                if piece.captured and piece.value == 1:
+                                    piece.color = pygame.Color('green')
+                                    piece.value = 1
+                                    move(1, 'green', i, j, True, state)
+                                    legal_move = True
+
+                            else:
+                                if piece.captured and piece.value == -1:
+                                    piece.color = pygame.Color('green')
+                                    piece.value = -1
+                                    move(-1, 'green', i, j, True, state)
+                                    legal_move = True
+
+                        if purple.collidepoint(event.pos) and purple_active:
+                            if game_turn % 2 == 0:
+                                if piece.captured and piece.value == 1:
+                                    piece.color = pygame.Color('purple')
+                                    piece.value = 1
+                                    move(1, 'purple', i, j, True, state)
+                                    legal_move = True
+
+                            else:
+                                if piece.captured and piece.value == -1:
+                                    piece.color = pygame.Color('purple')
+                                    piece.value = -1
+                                    move(-1, 'purple', i, j, True, state)
+                                    legal_move = True
+
+                if legal_move:
+                    game_turn += 1
+                    disable()
+                    legal_move = False
+                    win(state)
+                    #minimax(state, 3, True)
+                    print(evaluate(state))
+                    if game_over:
+                        if win(state) == 1:
+                            pygame.display.set_caption("Player 1 Wins")
+                        elif win(state) == -1:
+                            pygame.display.set_caption("Player 2 Wins")
+                        else:
+                            pygame.display.set_caption("Draw")
+
+        window.fill(pygame.Color(40, 40, 40))
+        for iy, rowOfCells in enumerate(board):
+            for ix, cell in enumerate(rowOfCells):
+                if cell.captured:
+                    pygame.draw.rect(window, cell.color, (ix * 150 + 150, iy * 150 + 1, 148, 148))
+
+                else:
+                    pygame.draw.rect(window, cell.color, (ix * 150 + 150, iy * 150 + 1, 148, 148))
+                if state[iy][ix] == 1:
+                    pygame.draw.rect(window, pygame.Color("white"), pygame.Rect(ix * 150 + 150, iy * 150 + 1, 148, 148),
+                                     10)
+                if state[iy][ix] == -1:
+                    pygame.draw.rect(window, pygame.Color("grey"), pygame.Rect(ix * 150 + 150, iy * 150 + 1, 148, 148),
+                                     10)
+
+        pygame.draw.rect(window, [255, 0, 0], red)
+        pygame.draw.rect(window, [0, 0, 255], blue)
+        pygame.draw.rect(window, [0, 255, 0], green)
+        pygame.draw.rect(window, [155, 0, 255], purple)
+
+        if not red_active:
+            pygame.draw.rect(window, pygame.Color('black'), red, 3)
+        if not blue_active:
+            pygame.draw.rect(window, pygame.Color('black'), blue, 3)
+        if not green_active:
+            pygame.draw.rect(window, pygame.Color('black'), green, 3)
+        if not purple_active:
+            pygame.draw.rect(window, pygame.Color('black'), purple, 3)
+
+        pygame.display.flip()
 
 
 if __name__ == '__main__':
     main()
+
+pygame.quit()
+exit()
