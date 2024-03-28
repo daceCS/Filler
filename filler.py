@@ -1,10 +1,18 @@
 import pygame
 import random
 
+pygame.init()
+
+whiteText = (255, 255, 255)
+greenText = (0, 255, 0)
+blueText = (0, 0, 128)
+
 purple = pygame.Rect(350, 640, 50, 50)
 red = pygame.Rect(400, 640, 50, 50)
 green = pygame.Rect(450, 640, 50, 50)
 blue = pygame.Rect(500, 640, 50, 50)
+
+
 
 color_arr = ['purple', 'red', 'green', 'blue']
 game_turn = 0
@@ -13,6 +21,9 @@ red_count = 0
 purple_count = 0
 green_count = 0
 blue_count = 0
+
+playerOneScore = 1
+playerTwoScore = 1
 
 purple_active = True
 green_active = True
@@ -177,7 +188,7 @@ def disable():
 
 
 def win(state):
-    global game_over
+    global game_over, playerTwoScore, playerOneScore
     player1_count = 0
     player2_count = 0
     count = 0
@@ -199,7 +210,17 @@ def win(state):
         else:
             game_over = True
             return 0
+    else:
+        playerOneScore = player1_count
+        playerTwoScore = player2_count
 
+
+text_font = pygame.font.SysFont("Comic Sans MS", 30)
+
+
+def draw_text(text, font, text_col, x, y):
+    img = font.render(text, True, text_col)
+    window.blit(img, (x, y))
 
 def main():
     global game_turn
@@ -299,6 +320,9 @@ def main():
                             pygame.display.set_caption("Draw")
 
         window.fill(pygame.Color(40, 40, 40))
+
+
+
         for iy, rowOfCells in enumerate(board):
             for ix, cell in enumerate(rowOfCells):
                 if cell.captured:
@@ -312,6 +336,8 @@ def main():
                 if state[iy][ix] == -1:
                     pygame.draw.rect(window, pygame.Color("grey"), pygame.Rect(ix * 150 + 150, iy * 150 + 1, 148, 148),
                                      4)
+
+
 
         pygame.draw.rect(window, [255, 0, 0], red)
         pygame.draw.rect(window, [0, 0, 255], blue)
@@ -327,6 +353,8 @@ def main():
         if not purple_active:
             pygame.draw.rect(window, pygame.Color('black'), purple, 1)
 
+        draw_text("Player One Score:" + str(playerOneScore), text_font, pygame.Color("white"), 25, 650)
+        draw_text("Player Two Score:"+ str(playerTwoScore), text_font, pygame.Color("grey"), 600, 650)
         pygame.display.flip()
 
 
